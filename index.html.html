@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WORD CHAOS: MISI KHULAFA' AL-RASYIDIN</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a; /* Slate 900 */
+            color: #f8fafc; /* Slate 50 */
+            overflow: hidden;
+            touch-action: none; /* Prevent scrolling on touch */
+            user-select: none;
+        }
+
+        /* Neon Glow Effects */
+        .neon-text-blue { text-shadow: 0 0 10px #00f3ff, 0 0 20px #00f3ff; }
+        .neon-text-purple { text-shadow: 0 0 10px #bd00ff, 0 0 20px #bd00ff; }
+        .neon-text-yellow { text-shadow: 0 0 10px #fffb00, 0 0 20px #fffb00; }
+        
+        .neon-border-blue { box-shadow: 0 0 10px #00f3ff, inset 0 0 10px #00f3ff; border-color: #00f3ff; }
+        .neon-border-purple { box-shadow: 0 0 10px #bd00ff, inset 0 0 10px #bd00ff; border-color: #bd00ff; }
+        .neon-border-yellow { box-shadow: 0 0 10px #fffb00, inset 0 0 10px #fffb00; border-color: #fffb00; }
+        .neon-border-red { box-shadow: 0 0 10px #ff003c, inset 0 0 10px #ff003c; border-color: #ff003c; }
+        .neon-border-green { box-shadow: 0 0 10px #00ff66, inset 0 0 10px #00ff66; border-color: #00ff66; }
+
+        .word-item {
+            position: absolute;
+            will-change: transform;
+            cursor: grab;
+            transition: box-shadow 0.2s, background-color 0.2s;
+            touch-action: none; /* Crucial for pointer events on mobile */
+        }
+        
+        .word-item:active {
+            cursor: grabbing;
+        }
+
+        .dropzone-active {
+            background-color: rgba(0, 243, 255, 0.2);
+            box-shadow: 0 0 15px #00f3ff, inset 0 0 15px #00f3ff;
+            border-color: #00f3ff;
+            transform: scale(1.05);
+        }
+
+        /* Animations */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+        .animate-shake {
+            animation: shake 0.4s ease-in-out;
+        }
+
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        .animate-pop {
+            animation: pop 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        
+        /* Modals and Overlays */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #60a5fa; }
+    </style>
+</head>
+<body class="flex flex-col h-screen w-screen">
+
+    <!-- Screen: Main Menu -->
+    <div id="screen-menu" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-900 z-50 fade-in">
+        <div class="text-center p-8 glass-panel border-2 rounded-2xl neon-border-blue max-w-2xl w-11/12">
+            <h1 class="text-4xl md:text-6xl font-extrabold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 neon-text-blue">
+                WORD CHAOS
+            </h1>
+            <h2 class="text-xl md:text-2xl font-bold mb-8 text-yellow-300 neon-text-yellow">
+                MISI KHULAFA' AL-RASYIDIN
+            </h2>
+            
+            <div class="bg-slate-800 p-4 rounded-lg text-left mb-8 border border-slate-600 text-sm md:text-base">
+                <h3 class="font-bold text-cyan-400 mb-2 border-b border-slate-700 pb-1">CARA BERMAIN:</h3>
+                <ul class="list-disc pl-5 space-y-2 text-slate-300">
+                    <li>Lengkapkan <strong>20 soalan</strong> fakta mengenai Khulafa' al-Rasyidin.</li>
+                    <li>Perkataan pilihan akan bergerak liar. <strong>Tarik dan lepas (Drag & Drop)</strong> perkataan yang betul ke dalam kotak kosong.</li>
+                    <li>Anda ada <strong>30 saat</strong> untuk setiap soalan.</li>
+                    <li>Jawapan betul = <strong>+5 markah</strong>. Jawapan salah = Tiada tolakan markah.</li>
+                </ul>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <button id="btn-start" class="px-8 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold rounded-full text-xl shadow-[0_0_15px_rgba(0,243,255,0.6)] transition transform hover:scale-105">
+                    MULA MISI
+                </button>
+                <div class="flex items-center gap-2">
+                    <button id="btn-toggle-sound-menu" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-full border border-slate-500 transition">
+                        🔊
+                    </button>
+                    <span class="text-sm text-slate-400">Bunyi</span>
+                </div>
+            </div>
+            
+            <div class="mt-6 text-slate-400 text-sm">
+                Rekod Terbaik: <span id="high-score-display" class="font-bold text-yellow-400">0</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Screen: Game -->
+    <div id="screen-game" class="hidden absolute inset-0 flex flex-col bg-slate-900 z-10">
+        <!-- Top HUD -->
+        <div class="w-full bg-slate-800 border-b-2 border-slate-700 p-2 md:p-4 flex flex-wrap justify-between items-center z-20 shadow-md">
+            <div class="flex items-center gap-4">
+                <div class="font-bold text-lg md:text-xl text-cyan-400">
+                    SOALAN: <span id="ui-qnum" class="text-white">1/20</span>
+                </div>
+                <div class="font-bold text-lg md:text-xl text-purple-400">
+                    MARKAH: <span id="ui-score" class="text-white">0</span>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2 md:gap-4 mt-2 md:mt-0">
+                <div class="flex items-center bg-slate-900 rounded-full px-3 py-1 border border-slate-600">
+                    <span class="text-yellow-400 font-bold mr-2">⏱️</span>
+                    <span id="ui-timer" class="font-mono text-xl md:text-2xl font-bold text-white w-8 text-center">60</span>
+                </div>
+                <button id="btn-pause" class="bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded text-sm md:text-base font-bold border border-slate-500 transition text-white">
+                    JEDA
+                </button>
+            </div>
+            
+            <!-- Progress Bar -->
+            <div class="w-full mt-2 bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-700">
+                <div id="ui-progress" class="bg-gradient-to-r from-cyan-400 to-purple-500 h-2 w-0 transition-all duration-300"></div>
+            </div>
+        </div>
+
+        <!-- Gameplay Arena (Word Container) -->
+        <div id="word-arena" class="relative flex-grow w-full bg-slate-900 shadow-[inset_0_0_50px_rgba(0,0,0,0.8)] z-30">
+            <!-- Words injected here -->
+        </div>
+
+        <!-- Sentence Building Area (Bottom) -->
+        <div id="sentence-builder-container" class="w-full p-4 md:p-6 flex-shrink-0 z-20 bg-slate-800/95 backdrop-blur shadow-[0_-10px_20px_rgba(0,0,0,0.6)] border-t-2 border-cyan-500 flex flex-col items-center">
+            <p class="text-cyan-400 font-bold mb-3 uppercase tracking-widest text-sm text-center">Susun Semula Perkataan Menjadi Fakta Tepat:</p>
+            <div id="sentence-builder" class="flex flex-wrap justify-center items-center gap-2 md:gap-3 w-full max-w-5xl mx-auto min-h-[60px]">
+                <!-- Slots injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Pause -->
+    <div id="modal-pause" class="hidden absolute inset-0 glass-panel flex flex-col items-center justify-center z-50">
+        <div class="bg-slate-800 p-8 rounded-2xl border-2 neon-border-purple text-center w-11/12 max-w-sm">
+            <h2 class="text-3xl font-bold text-purple-400 mb-6">PERMAINAN DIJEDA</h2>
+            <div class="flex flex-col gap-4">
+                <button id="btn-resume" class="w-full py-3 bg-cyan-600 hover:bg-cyan-500 rounded-full font-bold text-lg transition shadow-lg text-white">
+                    SAMBUNG
+                </button>
+                <div class="flex justify-center gap-4 mt-2">
+                    <button id="btn-toggle-sound-game" class="p-3 bg-slate-700 hover:bg-slate-600 rounded-full border border-slate-500 transition">
+                        🔊
+                    </button>
+                    <button id="btn-quit" class="py-2 px-6 bg-red-600 hover:bg-red-500 rounded-full font-bold transition text-white">
+                        TAMAT
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Fact Review (Shown after answering or timeout) -->
+    <div id="modal-fact" class="hidden absolute inset-0 glass-panel flex flex-col items-center justify-center z-50 transition-opacity duration-300">
+        <div class="bg-slate-800 p-6 md:p-8 rounded-2xl border-2 max-w-2xl w-11/12 shadow-2xl relative" id="modal-fact-box">
+            <div id="fact-status" class="text-center font-black text-2xl md:text-3xl mb-4">
+                <!-- TEPAT! / MASA TAMAT -->
+            </div>
+            
+            <div class="bg-slate-900 border border-slate-700 p-4 rounded-lg mb-6">
+                <p id="fact-full-sentence" class="text-lg md:text-xl font-bold text-white mb-4 text-center leading-relaxed">
+                    <!-- Full sentence with answer -->
+                </p>
+                <div class="border-t border-slate-700 pt-3">
+                    <span class="text-xs font-bold text-purple-400 uppercase tracking-wide">Fakta Tambahan:</span>
+                    <p id="fact-explanation" class="text-sm md:text-base text-slate-300 mt-1">
+                        <!-- Explanation -->
+                    </p>
+                </div>
+            </div>
+            
+            <div class="flex justify-center">
+                <button id="btn-next-question" class="px-8 py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-slate-900 font-extrabold rounded-full text-lg shadow-[0_0_15px_rgba(255,251,0,0.5)] transition transform hover:scale-105">
+                    SOALAN SETERUSNYA ➡️
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Screen: Game Over -->
+    <div id="screen-end" class="hidden absolute inset-0 flex flex-col items-center justify-center glass-panel z-50">
+        <div class="bg-slate-800 p-8 md:p-10 rounded-3xl border-2 neon-border-blue max-w-lg w-11/12 text-center shadow-2xl">
+            <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 mb-2">
+                MISI SELESAI
+            </h1>
+            <p class="text-slate-400 font-semibold mb-6">Laporan Pencapaian Khulafa' al-Rasyidin</p>
+            
+            <div class="relative w-40 h-40 mx-auto mb-6 flex items-center justify-center rounded-full border-4 border-slate-700 bg-slate-900 shadow-inner">
+                <div class="absolute inset-0 rounded-full border-4 neon-border-yellow opacity-50"></div>
+                <div class="text-center">
+                    <div class="text-5xl font-black text-yellow-400" id="end-score">100</div>
+                    <div class="text-xs text-slate-400 uppercase tracking-widest mt-1">Markah</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 mb-8 bg-slate-900 p-4 rounded-xl border border-slate-700">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-green-400" id="end-correct">0</div>
+                    <div class="text-xs text-slate-400">TEPAT</div>
+                </div>
+                <div class="text-center border-x border-slate-700">
+                    <div class="text-2xl font-bold text-red-400" id="end-wrong">0</div>
+                    <div class="text-xs text-slate-400">SALAH</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-slate-400" id="end-timeout">0</div>
+                    <div class="text-xs text-slate-500">TAMAT<br>MASA</div>
+                </div>
+            </div>
+
+            <button id="btn-restart" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold rounded-full text-xl shadow-[0_0_15px_rgba(0,243,255,0.4)] transition transform hover:scale-105">
+                MAIN SEMULA 🔄
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Data Soalan (Strictly from notes)
+        const questionsData = [
+            // Abu Bakar as-Siddiq
+            {
+                sentence: "Abu Bakar telah memerangi golongan murtad dalam Perang Riddah",
+                fact: "Abu Bakar as-Siddiq bertindak tegas dalam akidah dengan memerangi golongan murtad untuk menyatukan semula umat Islam."
+            },
+            {
+                sentence: "Nama sebenar Abu Bakar ialah Abdullah bin Abi Quhafah",
+                fact: "Nama sebenar beliau ialah Abdullah bin Abi Quhafah. Beliau adalah sahabat paling rapat dengan Nabi Muhammad SAW."
+            },
+            {
+                sentence: "Gelaran As-Siddiq bermaksud orang yang sentiasa membenarkan kata-kata Rasulullah",
+                fact: "Gelaran As-Siddiq diberikan kerana beliau sangat membenarkan setiap ajaran dan peristiwa yang dialami Rasulullah."
+            },
+            {
+                sentence: "Zaid bin Thabit telah ditugaskan untuk mengumpulkan naskhah al-Quran",
+                fact: "Abu Bakar mengarahkan Zaid bin Thabit untuk mengumpulkan al-Quran bagi memeliharanya daripada hilang."
+            },
+            {
+                sentence: "Abu Bakar merupakan pemimpin yang sangat tawaduk dan sederhana",
+                fact: "Walaupun bergelar Khalifah, Abu Bakar sangat tawaduk (merendah diri) dan mengamalkan gaya hidup sederhana."
+            },
+            // Umar bin al-Khattab
+            {
+                sentence: "Umar bin al-Khattab digelar Al-Farooq pemisah hak dan batil",
+                fact: "Umar digelar Al-Farooq kerana ketegasannya membezakan antara kebenaran (hak) dan kebatilan (batil)."
+            },
+            {
+                sentence: "Wilayah Islam mula meluas hingga ke Parsi Syam dan Mesir",
+                fact: "Sumbangan Umar bin al-Khattab termasuk meluaskan empayar Islam secara pesat hingga ke pelbagai benua."
+            },
+            {
+                sentence: "Umar menubuhkan sistem Diwan dan sistem bayaran gaji tentera",
+                fact: "Sistem Diwan (jabatan kerajaan) dan sistem gaji tentera diperkenalkan oleh Umar untuk melicinkan pentadbiran."
+            },
+            {
+                sentence: "Baitulmal ditubuhkan bagi menguruskan harta dan ekonomi negara Islam",
+                fact: "Baitulmal ditubuhkan buat pertama kali untuk menguruskan harta negara secara sistematik dan adil."
+            },
+            {
+                sentence: "Khalifah Umar yang pertama mula memperkenalkan sistem takwim Hijrah",
+                fact: "Beliau memperkenalkan kalendar Islam yang baharu bermula dari tarikh hijrah Rasulullah SAW ke Madinah."
+            },
+            {
+                sentence: "Sifat adil Umar terserlah dengan kekerapan melakukan rondaan malam",
+                fact: "Sifat keadilannya terserlah apabila beliau sanggup melakukan rondaan malam untuk memastikan tiada rakyatnya yang kelaparan."
+            },
+            // Uthman bin Affan
+            {
+                sentence: "Uthman bin Affan digelar Zun Nurain kerana memiliki dua cahaya",
+                fact: "Digelar Zun Nurain kerana beliau memperisterikan dua orang puteri Rasulullah SAW."
+            },
+            {
+                sentence: "Uthman menyelaraskan bacaan al-Quran yang dinamakan sebagai Mushaf Uthmani",
+                fact: "Penyelarasan ini dilakukan untuk mengelakkan perpecahan umat Islam akibat perbezaan dialek bacaan al-Quran."
+            },
+            {
+                sentence: "Empayar Islam dikembangkan lagi sehingga ke Afrika Utara dan Cyprus",
+                fact: "Sumbangan Uthman merangkumi peluasan kuasa yang berjaya menyebarkan syiar Islam secara meluas."
+            },
+            {
+                sentence: "Uthman bin Affan telah membina pelabuhan dan armada laut Islam",
+                fact: "Pembinaan armada laut (tentera laut) dan pelabuhan memperkuatkan sistem pertahanan dan ekonomi negara."
+            },
+            {
+                sentence: "Khalifah Uthman merupakan seorang hartawan yang berpewatakan sangat lemah lembut",
+                fact: "Walaupun seorang hartawan, Uthman sangat bertolak ansur, dermawan dan berpewatakan lemah lembut."
+            },
+            // Ali bin Abi Talib
+            {
+                sentence: "Ali bin Abi Talib ialah sepupu dan juga menantu Rasulullah",
+                fact: "Beliau berkahwin dengan puteri kesayangan Nabi Muhammad SAW iaitu Saidatina Fatimah az-Zahra."
+            },
+            {
+                sentence: "Ali memindahkan pusat pentadbiran negara Islam ke kota Kufah",
+                fact: "Pemindahan pusat pemerintahan ke Kufah (Iraq) dilakukan atas faktor keselamatan dan kelancaran pentadbiran."
+            },
+            {
+                sentence: "Ali bin Abi Talib berusaha gigih menyelesaikan konflik dalaman umat",
+                fact: "Beliau memerintah dalam keadaan genting dan penuh cabaran, namun tetap berani menegakkan keadilan."
+            },
+            {
+                sentence: "Ciri kepimpinan Khulafa al-Rasyidin sentiasa berpandukan wahyu al-Quran dan Sunnah",
+                fact: "Setiap keputusan penting diputuskan secara bermusyawarah (syura) namun tetap selari dengan panduan wahyu."
+            }
+        ];
+
+        let soundEnabled = true;
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playTone(freq, type, duration, vol = 0.1) {
+            if (!soundEnabled || !audioCtx) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                
+                gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) { console.warn("Audio error ignored"); }
+        }
+
+        function playSfx(type) {
+            initAudio();
+            switch (type) {
+                case 'hover': playTone(400, 'sine', 0.1, 0.05); break;
+                case 'grab': playTone(600, 'triangle', 0.1, 0.05); break;
+                case 'drop': playTone(300, 'triangle', 0.1, 0.05); break;
+                case 'correct': 
+                    playTone(523.25, 'sine', 0.15, 0.1); // C5
+                    setTimeout(() => playTone(659.25, 'sine', 0.15, 0.1), 100); // E5
+                    setTimeout(() => playTone(783.99, 'sine', 0.3, 0.1), 200); // G5
+                    break;
+                case 'wrong':
+                    playTone(200, 'sawtooth', 0.2, 0.1);
+                    setTimeout(() => playTone(150, 'sawtooth', 0.3, 0.1), 150);
+                    break;
+                case 'timeout':
+                    playTone(300, 'square', 0.3, 0.1);
+                    setTimeout(() => playTone(250, 'square', 0.5, 0.1), 300);
+                    break;
+                case 'click':
+                    playTone(800, 'square', 0.05, 0.05);
+                    break;
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const icon = soundEnabled ? "🔊" : "🔇";
+            document.getElementById('btn-toggle-sound-menu').innerText = icon;
+            document.getElementById('btn-toggle-sound-game').innerText = icon;
+            if(soundEnabled) initAudio();
+        }
+
+        document.getElementById('btn-toggle-sound-menu').addEventListener('click', toggleSound);
+        document.getElementById('btn-toggle-sound-game').addEventListener('click', toggleSound);
+
+        // Game State
+        const GameState = {
+            questions: [],
+            currentIndex: 0,
+            score: 0,
+            timeLeft: 60,
+            timerInterval: null,
+            isPaused: false,
+            isPlaying: false,
+            words: [],
+            wordsLeftToPlace: 0,
+            animationFrameId: null,
+            stats: {
+                correct: 0,
+                wrong: 0,
+                timeout: 0
+            }
+        };
+
+        const BASE_MOTION = 0.75;
+        let containerRect = null;
+        const arena = document.getElementById('word-arena');
+
+        // Storage
+        function getHighScore() {
+            return localStorage.getItem('khulafaHighScore') || 0;
+        }
+        function saveHighScore(score) {
+            const current = getHighScore();
+            if (score > current) {
+                localStorage.setItem('khulafaHighScore', score);
+            }
+        }
+        document.getElementById('high-score-display').innerText = getHighScore();
+
+        // Screen Management
+        function showScreen(screenId) {
+            ['screen-menu', 'screen-game', 'screen-end'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(screenId).classList.remove('hidden');
+            document.getElementById(screenId).classList.add('fade-in');
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        class WordEntity {
+            constructor(text, isCorrect) {
+                this.text = text;
+                this.isCorrect = isCorrect;
+                this.width = 0;
+                this.height = 0;
+                this.isDragging = false;
+                
+                // DOM Element
+                this.el = document.createElement('div');
+                this.el.className = 'word-item bg-slate-800 border-2 border-slate-600 rounded-full px-4 md:px-6 py-2 font-bold text-sm md:text-lg text-slate-200 select-none shadow-lg';
+                this.el.innerText = text;
+                
+                arena.appendChild(this.el);
+                
+                // Get dimensions after appending
+                const rect = this.el.getBoundingClientRect();
+                this.width = rect.width;
+                this.height = rect.height;
+
+                // Physics state
+                // Safe spawn area
+                this.x = Math.random() * (containerRect.width - this.width - 40) + 20;
+                this.y = Math.random() * (containerRect.height - this.height - 40) + 20;
+                
+                // Random direction, varying speed based on requirement (base 0.75)
+                const angle = Math.random() * Math.PI * 2;
+                const speedModifier = 0.8 + (Math.random() * 0.6); // 0.8 to 1.4 multiplier
+                const speed = BASE_MOTION * speedModifier;
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed;
+
+                // Pointer logic
+                this.pointerId = null;
+                this.dragOffsetX = 0;
+                this.dragOffsetY = 0;
+
+                this.setupPointerEvents();
+                this.draw();
+            }
+
+            setupPointerEvents() {
+                this.el.addEventListener('pointerdown', (e) => this.onPointerDown(e));
+                // Move and Up are better attached to window while dragging to prevent losing tracking
+            }
+
+            onPointerDown(e) {
+                if (GameState.isPaused || !GameState.isPlaying) return;
+                initAudio(); // Initialize audio context on first interaction if needed
+                playSfx('grab');
+                
+                this.isDragging = true;
+                this.pointerId = e.pointerId;
+                this.el.setPointerCapture(this.pointerId);
+                
+                // Calculate offset from top-left of word to pointer
+                const rect = this.el.getBoundingClientRect();
+                this.dragOffsetX = e.clientX - rect.left;
+                this.dragOffsetY = e.clientY - rect.top;
+
+                // Visual feedback
+                this.el.style.zIndex = 1000;
+                this.el.classList.add('neon-border-blue', 'text-cyan-300', 'bg-slate-700');
+                this.el.classList.remove('border-slate-600', 'text-slate-200');
+                
+                // Highlight empty slots to guide user
+                document.querySelectorAll('.drop-slot:not(.filled)').forEach(slot => {
+                    slot.classList.add('bg-slate-700', 'border-cyan-400', 'shadow-[0_0_10px_rgba(0,243,255,0.4)]');
+                    slot.classList.remove('border-slate-500');
+                });
+            }
+
+            onPointerMove(e) {
+                if (!this.isDragging || GameState.isPaused) return;
+                
+                // Map screen coordinates to arena coordinates
+                let newX = e.clientX - containerRect.left - this.dragOffsetX;
+                let newY = e.clientY - containerRect.top - this.dragOffsetY;
+                
+                // Membenarkan perkataan bergerak bebas tanpa sekatan paksi X dan Y semasa ditarik
+                this.x = newX;
+                this.y = newY;
+                
+                this.draw();
+            }
+
+            onPointerUp(e) {
+                if (!this.isDragging) return;
+                playSfx('drop');
+                this.isDragging = false;
+                if (this.pointerId !== null) {
+                    this.el.releasePointerCapture(this.pointerId);
+                }
+                
+                // Reset visuals
+                this.el.style.zIndex = 10;
+                this.el.classList.remove('neon-border-blue', 'text-cyan-300', 'bg-slate-700', 'neon-border-red');
+                this.el.classList.add('border-slate-600', 'text-slate-200');
+                
+                // Remove empty slot highlights
+                document.querySelectorAll('.drop-slot:not(.filled)').forEach(slot => {
+                    slot.classList.remove('bg-slate-700', 'border-cyan-400', 'shadow-[0_0_10px_rgba(0,243,255,0.4)]');
+                    slot.classList.add('border-slate-500');
+                });
+
+                this.checkDrop();
+            }
+
+            checkDrop() {
+                if (GameState.isPaused) return;
+                
+                const wordRect = this.el.getBoundingClientRect();
+                const slots = document.querySelectorAll('.drop-slot:not(.filled)');
+                
+                for(let slot of slots) {
+                    const rect = slot.getBoundingClientRect();
+                    // AABB collision detection
+                    const isColliding = !(
+                        wordRect.right < rect.left ||
+                        wordRect.left > rect.right ||
+                        wordRect.bottom < rect.top ||
+                        wordRect.top > rect.bottom
+                    );
+
+                    if (isColliding) {
+                        // Tolerate case insensitivity just in case
+                        if (this.text.toLowerCase() === slot.dataset.word.toLowerCase()) {
+                            handleCorrectDrop(this, slot);
+                        } else {
+                            this.showWrongFeedback();
+                            playSfx('wrong');
+                            GameState.stats.wrong++;
+                        }
+                        break; // Stop checking other slots after hitting one
+                    }
+                }
+            }
+
+            update() {
+                if (this.isDragging || GameState.isPaused) return;
+
+                // Move
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Bounce off walls
+                if (this.x <= 0) {
+                    this.x = 0;
+                    this.vx *= -1;
+                    this.addSlightRandomness();
+                } else if (this.x >= containerRect.width - this.width) {
+                    this.x = containerRect.width - this.width;
+                    this.vx *= -1;
+                    this.addSlightRandomness();
+                }
+
+                if (this.y <= 0) {
+                    this.y = 0;
+                    this.vy *= -1;
+                    this.addSlightRandomness();
+                } else if (this.y >= containerRect.height - this.height) {
+                    this.y = containerRect.height - this.height;
+                    this.vy *= -1;
+                    this.addSlightRandomness();
+                }
+
+                this.draw();
+            }
+            
+            addSlightRandomness() {
+                // Prevent axis locking
+                const jitter = (Math.random() - 0.5) * 0.2;
+                this.vx += jitter;
+                this.vy += jitter;
+                
+                // Normalize speed to keep it around BASE_MOTION
+                const currentSpeed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+                const targetSpeed = BASE_MOTION * (0.8 + Math.random() * 0.6);
+                const ratio = targetSpeed / currentSpeed;
+                this.vx *= ratio;
+                this.vy *= ratio;
+            }
+
+            draw() {
+                this.el.style.transform = `translate(${this.x}px, ${this.y}px)`;
+            }
+
+            destroy() {
+                if(this.el && this.el.parentNode) {
+                    this.el.parentNode.removeChild(this.el);
+                }
+            }
+            
+            showWrongFeedback() {
+                this.el.classList.add('neon-border-red', 'animate-shake', 'bg-red-900');
+                setTimeout(() => {
+                    if (this.el) {
+                        this.el.classList.remove('neon-border-red', 'animate-shake', 'bg-red-900');
+                    }
+                }, 400);
+            }
+        }
+
+        function updateContainerRect() {
+            containerRect = arena.getBoundingClientRect();
+            
+            // Tetapan sandaran (fallback) sekiranya skrin dikira sewaktu ia belum kelihatan sepenuhnya
+            if (containerRect.width === 0 && containerRect.height === 0) {
+                containerRect = { top: 0, left: 0, width: window.innerWidth, height: window.innerHeight * 0.5 };
+            }
+        }
+
+        window.addEventListener('resize', updateContainerRect);
+
+        // Global pointer events for dragging smoothly outside the word boundaries
+        window.addEventListener('pointermove', (e) => {
+            GameState.words.forEach(w => {
+                if (w.isDragging) w.onPointerMove(e);
+            });
+        });
+        window.addEventListener('pointerup', (e) => {
+            GameState.words.forEach(w => {
+                if (w.isDragging) w.onPointerUp(e);
+            });
+        });
+
+        function gameLoop() {
+            if (GameState.isPlaying && !GameState.isPaused) {
+                GameState.words.forEach(word => word.update());
+            }
+            GameState.animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        function loadQuestion() {
+            arena.innerHTML = '';
+            GameState.words = [];
+            const builder = document.getElementById('sentence-builder');
+            builder.innerHTML = '';
+
+            const q = GameState.questions[GameState.currentIndex];
+            const words = q.sentence.split(' ');
+            GameState.wordsLeftToPlace = words.length;
+
+            // Generate placement slots
+            words.forEach(word => {
+                const slot = document.createElement('div');
+                slot.className = 'drop-slot w-auto min-w-[60px] h-10 md:h-12 border-2 border-dashed border-slate-500 rounded-lg flex items-center justify-center px-3 md:px-4 transition-all duration-300 text-transparent select-none';
+                slot.dataset.word = word;
+                slot.innerText = word; // Invisible text maintains accurate slot width
+                builder.appendChild(slot);
+            });
+            
+            // Kemas kini ukuran sempadan permainan secara langsung tanpa penangguhan masa (synchronous)
+            updateContainerRect();
+
+            // Generate Draggable Words (Shuffled)
+            let shuffledWords = shuffleArray([...words]);
+            shuffledWords.forEach(w => {
+                GameState.words.push(new WordEntity(w, true));
+            });
+
+            // Update UI Counters
+            document.getElementById('ui-qnum').innerText = `${GameState.currentIndex + 1}/${GameState.questions.length}`;
+            updateProgress();
+            
+            // Start Timer (Increased for unjumbling logic)
+            GameState.timeLeft = 60;
+            updateTimerUI();
+            clearInterval(GameState.timerInterval);
+            GameState.timerInterval = setInterval(timerTick, 1000);
+        }
+
+        function timerTick() {
+            if (GameState.isPaused || !GameState.isPlaying) return;
+            
+            GameState.timeLeft--;
+            updateTimerUI();
+            
+            if (GameState.timeLeft <= 0) {
+                handleTimeout();
+            }
+        }
+
+        function updateTimerUI() {
+            const timerEl = document.getElementById('ui-timer');
+            timerEl.innerText = GameState.timeLeft;
+            if (GameState.timeLeft <= 5) {
+                timerEl.classList.add('text-red-500', 'animate-pulse');
+                timerEl.classList.remove('text-white');
+                if(GameState.timeLeft > 0) playSfx('hover'); // tick sound
+            } else {
+                timerEl.classList.remove('text-red-500', 'animate-pulse');
+                timerEl.classList.add('text-white');
+            }
+        }
+
+        function updateProgress() {
+            const pct = ((GameState.currentIndex) / GameState.questions.length) * 100;
+            document.getElementById('ui-progress').style.width = `${pct}%`;
+        }
+
+        function handleCorrectDrop(wordEntity, slot) {
+            playSfx('click'); 
+            
+            // Visual snap update
+            slot.classList.add('filled', 'border-solid', 'border-green-500', 'bg-green-900/80', 'text-green-300', 'font-bold', 'animate-pop', 'shadow-[0_0_10px_rgba(0,255,102,0.4)]');
+            slot.classList.remove('border-dashed', 'border-slate-500', 'text-transparent');
+            
+            wordEntity.destroy(); // Remove from arena
+            
+            // Logic updates
+            GameState.words = GameState.words.filter(w => w !== wordEntity);
+            GameState.wordsLeftToPlace--;
+
+            // Sentence Completion Check
+            if (GameState.wordsLeftToPlace <= 0) {
+                playSfx('correct');
+                GameState.score += 5; // Give score upon completion
+                GameState.stats.correct++;
+                document.getElementById('ui-score').innerText = GameState.score;
+                showFactModal(true);
+            }
+        }
+
+        function handleTimeout() {
+            playSfx('timeout');
+            GameState.stats.timeout++;
+            showFactModal(false);
+        }
+
+        function showFactModal(isCorrect) {
+            clearInterval(GameState.timerInterval);
+            GameState.isPaused = true;
+            
+            const q = GameState.questions[GameState.currentIndex];
+            const modal = document.getElementById('modal-fact');
+            const statusEl = document.getElementById('fact-status');
+            const boxEl = document.getElementById('modal-fact-box');
+            
+            if (isCorrect) {
+                statusEl.innerText = "TEPAT! 🎉";
+                statusEl.className = "text-center font-black text-2xl md:text-3xl mb-4 text-green-400 neon-text-green animate-pop";
+                boxEl.className = "bg-slate-800 p-6 md:p-8 rounded-2xl border-2 max-w-2xl w-11/12 shadow-2xl relative neon-border-green";
+            } else {
+                statusEl.innerText = "MASA TAMAT ⏳";
+                statusEl.className = "text-center font-black text-2xl md:text-3xl mb-4 text-red-400 animate-shake";
+                boxEl.className = "bg-slate-800 p-6 md:p-8 rounded-2xl border-2 max-w-2xl w-11/12 shadow-2xl relative neon-border-red";
+            }
+            
+            // Show full reconstructed sentence
+            document.getElementById('fact-full-sentence').innerHTML = `<span class="text-cyan-300">${q.sentence}</span>`;
+            document.getElementById('fact-explanation').innerText = q.fact;
+            
+            modal.classList.remove('hidden');
+        }
+
+        document.getElementById('btn-next-question').addEventListener('click', () => {
+            playSfx('click');
+            document.getElementById('modal-fact').classList.add('hidden');
+            GameState.isPaused = false;
+            GameState.currentIndex++;
+            
+            if (GameState.currentIndex >= GameState.questions.length) {
+                endGame();
+            } else {
+                loadQuestion();
+            }
+        });
+
+        function startGame() {
+            playSfx('click');
+            initAudio();
+            
+            GameState.questions = shuffleArray([...questionsData]);
+            GameState.currentIndex = 0;
+            GameState.score = 0;
+            GameState.stats = { correct: 0, wrong: 0, timeout: 0 };
+            GameState.isPaused = false;
+            GameState.isPlaying = true;
+            
+            document.getElementById('ui-score').innerText = '0';
+            
+            showScreen('screen-game');
+            
+            // Start Loop if not running
+            if (!GameState.animationFrameId) {
+                gameLoop();
+            }
+            
+            // Short delay before first question to allow UI transition
+            setTimeout(() => {
+                loadQuestion();
+            }, 300);
+        }
+
+        function endGame() {
+            GameState.isPlaying = false;
+            clearInterval(GameState.timerInterval);
+            
+            saveHighScore(GameState.score);
+            
+            document.getElementById('end-score').innerText = GameState.score;
+            document.getElementById('end-correct').innerText = GameState.stats.correct;
+            document.getElementById('end-wrong').innerText = GameState.stats.wrong;
+            document.getElementById('end-timeout').innerText = GameState.stats.timeout;
+            
+            document.getElementById('high-score-display').innerText = getHighScore();
+            
+            showScreen('screen-end');
+        }
+
+        // Event Listeners for Buttons
+        document.getElementById('btn-start').addEventListener('click', startGame);
+        document.getElementById('btn-restart').addEventListener('click', startGame);
+        
+        document.getElementById('btn-pause').addEventListener('click', () => {
+            playSfx('click');
+            if(GameState.isPaused) return;
+            GameState.isPaused = true;
+            document.getElementById('modal-pause').classList.remove('hidden');
+        });
+
+        document.getElementById('btn-resume').addEventListener('click', () => {
+            playSfx('click');
+            GameState.isPaused = false;
+            document.getElementById('modal-pause').classList.add('hidden');
+        });
+
+        document.getElementById('btn-quit').addEventListener('click', () => {
+            playSfx('click');
+            document.getElementById('modal-pause').classList.add('hidden');
+            endGame();
+        });
+
+        // Initialize display
+        window.addEventListener('load', () => {
+            document.getElementById('high-score-display').innerText = getHighScore();
+        });
+
+    </script>
+</body>
+</html>
